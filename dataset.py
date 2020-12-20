@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 from random import shuffle
 
 
-
 class dataset():
     def __init__(self,name = "cifar10"):
         self.name = name
@@ -15,8 +14,6 @@ class dataset():
             (x_train, y_train) , (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
         elif self.name == "cifar100":
             x_train, y_train , x_test, y_test = tf.keras.datasets.cifar100.load_data()
-        elif self.name == "voc2012":
-            pass
         #简单预处理
         x_train=tf.convert_to_tensor(x_train)/255
         x_test=tf.convert_to_tensor(x_test)/255
@@ -76,7 +73,9 @@ def display(image,label):
 if __name__ == "__main__":
     Dataset = dataset("cifar10")
     x_train, y_train , x_test, y_test = Dataset.load_data()
-    x_retrain_train, y_retrain_train , x_retrain_test, y_retrain_test = Dataset.split_data(x_train, y_train , x_test, y_test,2)
-    #display(x_retrain_train[10:19],y_retrain_train[10:19])
-    display(x_retrain_test[40:49],y_retrain_test[40:49])
+    x_retrain_train, y_retrain_train , x_retrain_test, y_retrain_test = Dataset.split_data(x_train, y_train , x_test, y_test,0)
+    x_sample =x_train[y_train == 1] 
+    y_sample = y_train[y_train == 1]
+    #display(x_sample[0:9],y_sample[0:9])
+    display(x_retrain_train[40:49],y_retrain_train[40:49])
     pass

@@ -7,26 +7,26 @@ import network as Net
 import os
 import time
 
-save_dir = "./model/"
-classes = ["airplane","automobile", "bird","cat", "deer", "dog","frog","horse", "ship", "truck"]
+save_dir = "./model/prune/"
+
 def train(model,train_data,train_label,model_name = "VGG19_2.h5"):
 
     def scheduler(epoch,lr):
         if epoch <5:
             return lr
-        elif epoch <10:
+        elif epoch <8:
             return lr/10
         else:
             return lr/1000 
 
 
     callback = [tf.keras.callbacks.LearningRateScheduler(scheduler),
-                tf.keras.callbacks.EarlyStopping(monitor = 'val_loss',min_delta = 1e-2,patience = 2, verbose = 1)]
+                tf.keras.callbacks.EarlyStopping(monitor = 'val_loss',min_delta = 1e-2,patience = 4, verbose = 1)]
 
-    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate = 1e-4),
+    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate = 1e-5),
                 #loss=keras.losses.CategoricalCrossentropy(),  # 需要使用to_categorical
-                loss='sparse_categorical_crossentropy',
-                #loss = 'binary_crossentropy',
+                #loss='sparse_categorical_crossentropy',
+                loss = 'binary_crossentropy',
                 metrics=['accuracy'])
 
     history = model.fit(train_data,train_label,batch_size = 16,epochs = 10,callbacks = callback,validation_split = 0.2)
@@ -44,13 +44,6 @@ def test(model, x,y,target_id):
     accuracy = np.array(correct).sum()/10000
     print("the accuracy of model {} is ".format(target_id), accuracy)
 
-def test_whole( test_model,test_data,test_label):
-    for i in range(10):
-        print("size of {} is {}.Test accuracy are as follow".format(classes[i],test_data[test_label==i].shape[0]))
-        res = test_model.evaluate(test_data[test_label==i],test_label[test_label==i])
-    print("all Test accuracy are as follow")
-    res = test_model.evaluate(test_data,test_label)
-
 def calculate_time(x,y):
     Serial_Models = Net.Get_SerialModel()
     for i in range(10):
@@ -66,19 +59,20 @@ if __name__ == "__main__":
     Dataset = Data.dataset("cifar10")
     x_train, y_train , x_test, y_test = Dataset.load_data()
 
-    for i in range(1):
-        model_name = "VGG19_{}.h5".format(11)
+    for i in range(10):
+        model_name = "VGG19_{}_noweights.h5".format(i)
         x_retrain_train, y_retrain_train , x_retrain_test, y_retrain_test = Dataset.split_data(x_train, y_train , x_test, y_test,i)
         #测试模型准确率
         isload_model = False
         if isload_model == True:
             model = tf.keras.models.load_model(save_dir+model_name)
-            test_whole(model,x_test,y_test)
+            test(model,x_retrain_test,y_retrain_test,i)
         #训练子模型
         else:
-            model = Net.Get_VGG19()
-            train(model,x_train,y_train,model_name = model_name)
-            test_whole(model,x_test,y_test)
+            #model = Net.Get_VGG19()
+            model = tf.keras.models.load_model("./model/noweights/"+model_name)
+            train(model,x_retrain_train,y_retrain_train,model_name = "VGG19_{}_retrain.h5".format(i))
+            test(model,x_retrain_test,y_retrain_test,i)
 
     #计算每个class的时间
     #calculate_time(x_test,y_test)
